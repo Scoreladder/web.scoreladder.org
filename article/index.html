@@ -1,175 +1,130 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Scoreladder Articles</title>
+<title>Scoreladder Articles</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #121212;
-            color: white;
-            margin: 0;
-            padding: 40px;
-        }
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: white;
+    margin: 0;
+    padding: 40px;
+}
 
-        .container {
-            max-width: 900px;
-            margin: auto;
-        }
+.container {
+    max-width: 900px;
+    margin: auto;
+}
 
-        h1 {
-            margin-bottom: 8px;
-        }
+h1 {
+    margin-bottom: 6px;
+}
 
-        .subtitle {
-            color: #aaa;
-            margin-bottom: 25px;
-            line-height: 1.6;
-        }
+.subtitle {
+    color: #aaa;
+    margin-bottom: 20px;
+}
 
-        input {
-            width: 100%;
-            padding: 14px;
-            font-size: 18px;
-            border: none;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            box-sizing: border-box;
-        }
+input {
+    width: 100%;
+    padding: 14px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: none;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+}
 
-        .button-row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+button {
+    padding: 12px 18px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #4f46e5;
+    color: white;
+    margin-right: 8px;
+}
 
-        button {
-            padding: 12px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            border: none;
-            border-radius: 8px;
-            background: #4f46e5;
-            color: white;
-        }
+button:hover {
+    background: #6366f1;
+}
 
-        button:hover {
-            background: #6366f1;
-        }
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+.card {
+    margin-top: 25px;
+    padding: 20px;
+    background: #1e1e1e;
+    border-radius: 12px;
+}
 
-        .card {
-            margin-top: 30px;
-            padding: 24px;
-            background: #1e1e1e;
-            border-radius: 12px;
-        }
+.title {
+    font-size: 26px;
+    margin-bottom: 10px;
+}
 
-        .title {
-            font-size: 28px;
-            margin-bottom: 12px;
-        }
+.meta {
+    color: #aaa;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
 
-        .meta {
-            color: #aaa;
-            margin-bottom: 18px;
-            line-height: 1.7;
-        }
+.abstract {
+    line-height: 1.7;
+}
 
-        .abstract {
-            line-height: 1.8;
-            font-size: 16px;
-        }
+.choice {
+    margin-top: 8px;
+    padding: 10px;
+    background: #2a2a2a;
+    border-radius: 8px;
+}
 
-        .question-box {
-            margin-top: 18px;
-            padding: 16px;
-            background: #2a2a2a;
-            border-radius: 10px;
-        }
+.answer {
+    margin-top: 10px;
+    color: #8ab4ff;
+}
 
-        .question-title {
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
-
-        .choice {
-            margin: 8px 0;
-            padding: 10px;
-            background: #333;
-            border-radius: 8px;
-        }
-
-        .answer {
-            margin-top: 10px;
-            color: #8ab4ff;
-        }
-
-        a {
-            color: #8ab4ff;
-            text-decoration: none;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .loading {
-            margin-top: 20px;
-            color: #aaa;
-        }
-
-        .footer-note {
-            margin-top: 40px;
-            color: #777;
-            font-size: 14px;
-            text-align: center;
-        }
-    </style>
+.footer {
+    margin-top: 40px;
+    font-size: 13px;
+    color: #777;
+    text-align: center;
+}
+</style>
 </head>
+
 <body>
 
 <div class="container">
 
-    <h1>Scoreladder Articles</h1>
+<h1>Scoreladder Articles</h1>
 
-    <div class="subtitle">
-        Discover open-access academic articles powered by
-        <a href="https://doaj.org" target="_blank">
-            DOAJ (Directory of Open Access Journals)
-        </a>.
-    </div>
+<div class="subtitle">
+    Open-access research powered by DOAJ
+</div>
 
-    <input
-        type="text"
-        id="topicInput"
-        placeholder="Enter a topic..."
-    >
+<input id="topicInput" placeholder="Enter a topic..." />
 
-    <div class="button-row">
-        <button id="searchButton">
-            Find Random Article
-        </button>
+<div>
+    <button id="searchBtn">Find Article</button>
+    <button id="aiBtn" disabled>Generate SAT Questions</button>
+</div>
 
-        <button id="questionButton">
-            Generate SAT-Style Questions
-        </button>
-    </div>
+<div id="result"></div>
+<div id="questions"></div>
 
-    <div id="result"></div>
-
-    <div id="questions"></div>
-
-    <div class="footer-note">
-        Article metadata provided by DOAJ.
-    </div>
+<div class="footer">
+    Articles sourced from DOAJ (Directory of Open Access Journals)
+</div>
 
 </div>
 

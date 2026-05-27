@@ -1,167 +1,165 @@
-const topicInput = document.getElementById("topicInput");
-const searchBtn = document.getElementById("searchBtn");
-const aiBtn = document.getElementById("aiBtn");
+document.addEventListener("DOMContentLoaded", () => {
 
-const resultDiv = document.getElementById("result");
-const questionsDiv = document.getElementById("questions");
+    const topicInput = document.getElementById("topicInput");
+    const searchBtn = document.getElementById("searchBtn");
+    const aiBtn = document.getElementById("aiBtn");
 
-let currentText = "";
+    const resultDiv = document.getElementById("result");
+    const questionsDiv = document.getElementById("questions");
 
-searchBtn.addEventListener("click", searchArticle);
-aiBtn.addEventListener("click", generateAIQuestions);
+    let currentText = "";
 
-async function searchArticle() {
+    searchBtn.addEventListener("click", searchArticle);
+    aiBtn.addEventListener("click", generateAIQuestions);
 
-    const topic = topicInput.value.trim();
+    async function searchArticle() {
+        const topic = topicInput.value.trim();
 
-    if (!topic) {
-        resultDiv.innerHTML = `<div class="card">Enter a topic.</div>`;
-        return;
-    }
-
-    aiBtn.disabled = true;
-    questionsDiv.innerHTML = "";
-
-    resultDiv.innerHTML = `<div class="card">Loading...</div>`;
-
-    try {
-
-        const res = await fetch(
-            `https://doaj.org/api/search/articles/${encodeURIComponent(topic)}?pageSize=50`
-        );
-
-        const data = await res.json();
-
-        if (!data.results?.length) {
-            resultDiv.innerHTML = `<div class="card">No results found.</div>`;
+        if (!topic) {
+            resultDiv.innerHTML = `<div class="card">Enter a topic.</div>`;
             return;
         }
 
-        const article =
-            data.results[Math.floor(Math.random() * data.results.length)];
+        aiBtn.disabled = true;
+        questionsDiv.innerHTML = "";
+        resultDiv.innerHTML = `<div class="card">Loading...</div>`;
 
-        renderArticle(article);
+        try {
+            const res = await fetch(
+                `https://doaj.org/api/search/articles/${encodeURIComponent(topic)}?pageSize=50`
+            );
 
-    } catch (err) {
-        console.error(err);
-        resultDiv.innerHTML = `<div class="card">Failed to load articles.</div>`;
-    }
-}
+            const data = await res.json();
 
-function renderArticle(article) {
-
-    const bib = article.bibjson || {};
-
-    const title = bib.title || "No title";
-    const abstract = bib.abstract || bib.title || "No abstract available";
-
-    currentText = abstract;
-
-    aiBtn.disabled = currentText.length < 50;
-
-    const authors =
-        (bib.author || []).map(a => a.name).join(", ") || "Unknown";
-
-    const journal = bib.journal?.title || "Unknown journal";
-    const year = bib.year || "Unknown year";
-
-    const link = bib.link?.[0]?.url || "#";
-
-    resultDiv.innerHTML = `
-        <div class="card">
-
-            <div class="title">${escapeHtml(title)}</div>
-
-            <div class="meta">
-                <b>Authors:</b> ${escapeHtml(authors)}<br>
-                <b>Journal:</b> ${escapeHtml(journal)}<br>
-                <b>Year:</b> ${escapeHtml(year)}
-            </div>
-
-            <div class="abstract">
-                ${escapeHtml(abstract)}
-            </div>
-
-            <br>
-            <a href="${link}" target="_blank">View Article</a>
-
-        </div>
-    `;
-}
-
-async function generateAIQuestions() {
-
-    questionsDiv.innerHTML =
-        `<div class="card">Generating AI questions...</div>`;
-
-    try {
-
-        const res = await fetch(
-            "https://scoreladderai.scyyebiz.workers.dev",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    text: currentText
-                })
+            if (!data.results?.length) {
+                resultDiv.innerHTML = `<div class="card">No results found.</div>`;
+                return;
             }
-        );
 
-        const data = await res.json();
+            const article =
+                data.results[Math.floor(Math.random() * data.results.length)];
 
-        renderQuestions(data);
+            renderArticle(article);
 
-    } catch (err) {
-
-        console.error(err);
-
-        questionsDiv.innerHTML =
-            `<div class="card">Failed to generate questions.</div>`;
-    }
-}
-
-function renderQuestions(data) {
-
-    if (!data.questions) {
-        questionsDiv.innerHTML =
-            `<div class="card">Invalid AI response.</div>`;
-        return;
+        } catch (err) {
+            console.error(err);
+            resultDiv.innerHTML = `<div class="card">Failed to load articles.</div>`;
+        }
     }
 
-    questionsDiv.innerHTML = "";
+    function renderArticle(article) {
 
-    data.questions.forEach((q, i) => {
+        const bib = article.bibjson || {};
 
-        questionsDiv.innerHTML += `
+        const title = bib.title || "No title";
+        const abstract = bib.abstract || bib.title || "No abstract available";
+
+        currentText = abstract;
+
+        aiBtn.disabled = currentText.length < 50;
+
+        const authors =
+            (bib.author || []).map(a => a.name).join(", ") || "Unknown";
+
+        const journal = bib.journal?.title || "Unknown journal";
+        const year = bib.year || "Unknown year";
+
+        const link = bib.link?.[0]?.url || "#";
+
+        resultDiv.innerHTML = `
             <div class="card">
 
-                <h3>Question ${i + 1}</h3>
+                <div class="title">${escapeHtml(title)}</div>
 
-                <p>${escapeHtml(q.question)}</p>
-
-                ${q.choices.map((c, idx) => `
-                    <div class="choice">
-                        <b>${["A","B","C","D"][idx]}.</b>
-                        ${escapeHtml(c)}
-                    </div>
-                `).join("")}
-
-                <div class="answer">
-                    Answer: ${["A","B","C","D"][q.answer]}
+                <div class="meta">
+                    <b>Authors:</b> ${escapeHtml(authors)}<br>
+                    <b>Journal:</b> ${escapeHtml(journal)}<br>
+                    <b>Year:</b> ${escapeHtml(year)}
                 </div>
+
+                <div class="abstract">
+                    ${escapeHtml(abstract)}
+                </div>
+
+                <br>
+                <a href="${link}" target="_blank">View Article</a>
 
             </div>
         `;
-    });
-}
+    }
 
-function escapeHtml(text) {
-    return text
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
+    async function generateAIQuestions() {
+
+        questionsDiv.innerHTML =
+            `<div class="card">Generating AI questions...</div>`;
+
+        try {
+
+            const res = await fetch(
+                "https://YOUR-WORKER.workers.dev",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        text: currentText
+                    })
+                }
+            );
+
+            const data = await res.json();
+
+            renderQuestions(data);
+
+        } catch (err) {
+            console.error(err);
+            questionsDiv.innerHTML =
+                `<div class="card">Failed to generate questions.</div>`;
+        }
+    }
+
+    function renderQuestions(data) {
+
+        if (!data.questions) {
+            questionsDiv.innerHTML =
+                `<div class="card">Invalid AI response.</div>`;
+            return;
+        }
+
+        questionsDiv.innerHTML = "";
+
+        data.questions.forEach((q, i) => {
+
+            questionsDiv.innerHTML += `
+                <div class="card">
+
+                    <h3>Question ${i + 1}</h3>
+
+                    <p>${escapeHtml(q.question)}</p>
+
+                    ${q.choices.map((c, idx) => `
+                        <div class="choice">
+                            <b>${["A","B","C","D"][idx]}.</b>
+                            ${escapeHtml(c)}
+                        </div>
+                    `).join("")}
+
+                    <div class="answer">
+                        Answer: ${["A","B","C","D"][q.answer]}
+                    </div>
+
+                </div>
+            `;
+        });
+    }
+
+    function escapeHtml(text) {
+        return text
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+});

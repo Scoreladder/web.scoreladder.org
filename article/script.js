@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-
     const topicInput = document.getElementById("topicInput");
     const searchBtn = document.getElementById("searchBtn");
     const aiBtn = document.getElementById("aiBtn");
@@ -96,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
 
             const res = await fetch(
-                "https://YOUR-WORKER.workers.dev",
+                "https://scoreladderai.scyyebiz.workers.dev",
                 {
                     method: "POST",
                     headers: {

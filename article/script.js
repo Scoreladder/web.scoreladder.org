@@ -16,7 +16,7 @@ async function generateAIQuestions() {
     try {
 
         const response = await fetch(
-            "https://YOUR-WORKER-URL.workers.dev",
+            "https://scoreladderai.scyyebiz.workers.dev",
             {
                 method: "POST",
                 headers: {

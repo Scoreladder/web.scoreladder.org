@@ -1,95 +1,167 @@
-questionButton.addEventListener(
-    "click",
-    generateAIQuestions
-);
+const topicInput = document.getElementById("topicInput");
+const searchBtn = document.getElementById("searchBtn");
+const aiBtn = document.getElementById("aiBtn");
 
-async function generateAIQuestions() {
+const resultDiv = document.getElementById("result");
+const questionsDiv = document.getElementById("questions");
 
-    if (!currentAbstract) return;
+let currentText = "";
 
-    questionsDiv.innerHTML = `
-        <div class="card">
-            Generating SAT-style questions...
-        </div>
-    `;
+searchBtn.addEventListener("click", searchArticle);
+aiBtn.addEventListener("click", generateAIQuestions);
+
+async function searchArticle() {
+
+    const topic = topicInput.value.trim();
+
+    if (!topic) {
+        resultDiv.innerHTML = `<div class="card">Enter a topic.</div>`;
+        return;
+    }
+
+    aiBtn.disabled = true;
+    questionsDiv.innerHTML = "";
+
+    resultDiv.innerHTML = `<div class="card">Loading...</div>`;
 
     try {
 
-        const response = await fetch(
+        const res = await fetch(
+            `https://doaj.org/api/search/articles/${encodeURIComponent(topic)}?pageSize=50`
+        );
+
+        const data = await res.json();
+
+        if (!data.results?.length) {
+            resultDiv.innerHTML = `<div class="card">No results found.</div>`;
+            return;
+        }
+
+        const article =
+            data.results[Math.floor(Math.random() * data.results.length)];
+
+        renderArticle(article);
+
+    } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML = `<div class="card">Failed to load articles.</div>`;
+    }
+}
+
+function renderArticle(article) {
+
+    const bib = article.bibjson || {};
+
+    const title = bib.title || "No title";
+    const abstract = bib.abstract || bib.title || "No abstract available";
+
+    currentText = abstract;
+
+    aiBtn.disabled = currentText.length < 50;
+
+    const authors =
+        (bib.author || []).map(a => a.name).join(", ") || "Unknown";
+
+    const journal = bib.journal?.title || "Unknown journal";
+    const year = bib.year || "Unknown year";
+
+    const link = bib.link?.[0]?.url || "#";
+
+    resultDiv.innerHTML = `
+        <div class="card">
+
+            <div class="title">${escapeHtml(title)}</div>
+
+            <div class="meta">
+                <b>Authors:</b> ${escapeHtml(authors)}<br>
+                <b>Journal:</b> ${escapeHtml(journal)}<br>
+                <b>Year:</b> ${escapeHtml(year)}
+            </div>
+
+            <div class="abstract">
+                ${escapeHtml(abstract)}
+            </div>
+
+            <br>
+            <a href="${link}" target="_blank">View Article</a>
+
+        </div>
+    `;
+}
+
+async function generateAIQuestions() {
+
+    questionsDiv.innerHTML =
+        `<div class="card">Generating AI questions...</div>`;
+
+    try {
+
+        const res = await fetch(
             "https://scoreladderai.scyyebiz.workers.dev",
             {
                 method: "POST",
                 headers: {
-                    "Content-Type":
-                        "application/json"
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    text: currentAbstract
+                    text: currentText
                 })
             }
         );
 
-        const data =
-            await response.json();
+        const data = await res.json();
 
-        renderAIQuestions(data);
+        renderQuestions(data);
 
     } catch (err) {
 
         console.error(err);
 
-        questionsDiv.innerHTML = `
-            <div class="card">
-                Failed to generate questions.
-            </div>
-        `;
+        questionsDiv.innerHTML =
+            `<div class="card">Failed to generate questions.</div>`;
     }
 }
 
-function renderAIQuestions(data) {
+function renderQuestions(data) {
 
     if (!data.questions) {
-
-        questionsDiv.innerHTML = `
-            <div class="card">
-                AI failed to generate questions.
-            </div>
-        `;
-
+        questionsDiv.innerHTML =
+            `<div class="card">Invalid AI response.</div>`;
         return;
     }
 
     questionsDiv.innerHTML = "";
 
-    data.questions.forEach((q, index) => {
+    data.questions.forEach((q, i) => {
 
         questionsDiv.innerHTML += `
             <div class="card">
 
-                <h2>
-                    Question ${index + 1}
-                </h2>
+                <h3>Question ${i + 1}</h3>
 
-                <p>
-                    ${escapeHtml(q.question)}
-                </p>
+                <p>${escapeHtml(q.question)}</p>
 
-                ${q.choices.map((choice, i) => `
+                ${q.choices.map((c, idx) => `
                     <div class="choice">
-                        <strong>
-                            ${["A","B","C","D"][i]}.
-                        </strong>
-
-                        ${escapeHtml(choice)}
+                        <b>${["A","B","C","D"][idx]}.</b>
+                        ${escapeHtml(c)}
                     </div>
                 `).join("")}
 
                 <div class="answer">
-                    Correct Answer:
-                    ${["A","B","C","D"][q.answer]}
+                    Answer: ${["A","B","C","D"][q.answer]}
                 </div>
 
             </div>
         `;
     });
+}
+
+function escapeHtml(text) {
+    return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }

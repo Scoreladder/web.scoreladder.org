@@ -1,13 +1,9 @@
 const topicInput = document.getElementById("topicInput");
 const searchBtn = document.getElementById("searchBtn");
-
 const resultDiv = document.getElementById("result");
 
 searchBtn.addEventListener("click", searchArticle);
 
-//////////////////////////////////////////////////////
-// MAIN
-//////////////////////////////////////////////////////
 async function searchArticle() {
 
     const topic = topicInput.value.trim();
@@ -21,7 +17,7 @@ async function searchArticle() {
 
     try {
 
-        // 1. SEARCH WIKIPEDIA TITLE
+        // 1. SEARCH TITLE
         const searchRes = await fetch(
             `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*&srlimit=1`
         );
@@ -34,42 +30,48 @@ async function searchArticle() {
 
         const title = searchData.query.search[0].title;
 
-        // 2. GET FULL PAGE TEXT
-        const pageRes = await fetch(
-            `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${encodeURIComponent(title)}&format=json&origin=*`
+        // 2. GET PARSED HTML (IMPORTANT PART)
+        const htmlRes = await fetch(
+            `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=text&format=json&origin=*`
         );
 
-        const pageData = await pageRes.json();
-        const page = Object.values(pageData.query.pages)[0];
+        const htmlData = await htmlRes.json();
 
-        if (!page?.extract) {
-            throw new Error("No content found.");
+        const htmlString = htmlData.parse?.text?.["*"];
+
+        if (!htmlString) {
+            throw new Error("No HTML content returned.");
         }
 
-        // 3. CLEAN + SPLIT INTO PARAGRAPHS
-        const paragraphs = page.extract
-            .replace(/\r/g, "")
-            .split("\n\n")
-            .map(p => p.trim())
-            .filter(p => p.length > 50);
+        // 3. PARSE HTML INTO DOM
+        const doc = new DOMParser().parseFromString(htmlString, "text/html");
+
+        // 4. EXTRACT PARAGRAPHS FROM <p>
+        let paragraphs = Array.from(doc.querySelectorAll("p"))
+            .map(p => p.textContent.trim())
+            .filter(p =>
+                p.length > 50 &&
+                !p.includes("coordinates") &&
+                !p.includes("listen")
+            );
 
         if (paragraphs.length < 2) {
-            throw new Error("Not enough paragraphs found.");
+            throw new Error("Not enough Wikipedia paragraphs found.");
         }
 
-        // 4. PICK 2 RANDOM PARAGRAPHS
-        const shuffled = paragraphs.sort(() => Math.random() - 0.5);
-        const selected = shuffled.slice(0, 2).join("\n\n");
+        // 5. PICK 2 RANDOM PARAGRAPHS
+        paragraphs = paragraphs.sort(() => Math.random() - 0.5);
+        const selected = paragraphs.slice(0, 2).join("\n\n");
 
-        // 5. BUILD LINK
+        // 6. BUILD LINK
         const link =
             `https://en.wikipedia.org/wiki/${title.replace(/ /g, "_")}`;
 
-        // 6. RENDER
+        // 7. DISPLAY
         resultDiv.innerHTML = `
             <div class="card">
                 <div class="title">${escapeHtml(title)}</div>
-                <div class="meta">Source: Wikipedia</div>
+                <div class="meta">Source: Wikipedia (HTML extract)</div>
 
                 <div class="abstract">${escapeHtml(selected)}</div>
 
@@ -87,9 +89,6 @@ async function searchArticle() {
     }
 }
 
-//////////////////////////////////////////////////////
-// SAFE HTML
-//////////////////////////////////////////////////////
 function escapeHtml(text) {
     return String(text)
         .replaceAll("&", "&amp;")

@@ -40,11 +40,11 @@ async function searchArticle() {
 }
 
 //////////////////////////////////////////////////////
-// PURE WIKIPEDIA PAGE FETCH (NO OTHER SOURCES)
+// WIKIPEDIA FETCH
 //////////////////////////////////////////////////////
 async function loadWikipediaPage(topic) {
 
-    // 1. GET PAGE TITLE FROM WIKIPEDIA SEARCH
+    // 1. search title
     const searchRes = await fetch(
         `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*&srlimit=1`
     );
@@ -57,7 +57,7 @@ async function loadWikipediaPage(topic) {
 
     const title = searchData.query.search[0].title;
 
-    // 2. FETCH FULL PAGE EXTRACT
+    // 2. get extract
     const pageRes = await fetch(
         `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${encodeURIComponent(title)}&format=json&origin=*`
     );
@@ -66,29 +66,32 @@ async function loadWikipediaPage(topic) {
     const page = Object.values(pageData.query.pages)[0];
 
     if (!page?.extract) {
-        throw new Error("No page text found.");
+        throw new Error("No Wikipedia content found.");
     }
 
-    // 3. CLEAN TEXT
     const text = cleanText(page.extract);
 
-    // 4. SPLIT INTO PARAGRAPHS
-    const paragraphs = text
-        .split("\n\n")
-        .map(p => p.trim())
-        .filter(p => p.length > 80);
-
-    if (paragraphs.length < 2) {
-        throw new Error("Not enough Wikipedia content.");
+    // 3. reject stub articles
+    if (text.length < 800) {
+        throw new Error("Wikipedia page too short (stub article). Try a broader topic.");
     }
 
-    // 5. TAKE FIRST 2–3 PARAGRAPHS (REAL ARTICLE TEXT ONLY)
-    const excerpt = paragraphs.slice(0, 3).join("\n\n");
+    // 4. extract robust paragraphs
+    const paragraphs = extractParagraphs(text);
+
+    if (paragraphs.length < 2) {
+        throw new Error("Not enough usable Wikipedia content.");
+    }
+
+    // 5. pick 2–3 paragraph passage (random middle section)
+    const maxStart = Math.max(0, paragraphs.length - 3);
+    const start = Math.floor(Math.random() * (maxStart + 1));
+
+    const excerpt = paragraphs.slice(start, start + 3).join("\n\n");
 
     currentText = excerpt;
     aiBtn.disabled = false;
 
-    // 6. BUILD REAL WIKIPEDIA LINK (NOT FROM API)
     const link =
         `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
 
@@ -106,33 +109,71 @@ async function loadWikipediaPage(topic) {
 }
 
 //////////////////////////////////////////////////////
-// TEXT CLEANING
+// PARAGRAPH EXTRACTION (ROBUST)
+//////////////////////////////////////////////////////
+function extractParagraphs(text) {
+
+    const cleaned = text
+        .replace(/\r/g, "")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim();
+
+    let paragraphs = cleaned.split("\n\n");
+
+    if (paragraphs.length < 2) {
+        paragraphs = cleaned.split("\n");
+    }
+
+    return paragraphs
+        .map(p => p.trim())
+        .filter(p =>
+            p.length > 80 &&
+            !p.startsWith("References") &&
+            !p.startsWith("See also") &&
+            !p.startsWith("External links")
+        );
+}
+
+//////////////////////////////////////////////////////
+// CLEAN TEXT
 //////////////////////////////////////////////////////
 function cleanText(text) {
     return text
-        .replace(/\s+/g, " ")
+        .replace(/\r/g, "")
         .replace(/\n{3,}/g, "\n\n")
         .trim();
 }
 
 //////////////////////////////////////////////////////
-// AI QUESTIONS (unchanged)
+// AI QUESTIONS
 //////////////////////////////////////////////////////
 async function generateAIQuestions() {
 
     questionsDiv.innerHTML =
         `<div class="card">Generating SAT questions...</div>`;
 
-    const res = await fetch("https://ai.scoreladder.org", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: currentText })
-    });
+    try {
 
-    const data = await res.json();
-    renderQuestions(data);
+        const res = await fetch("https://ai.scoreladder.org", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: currentText })
+        });
+
+        const data = await res.json();
+
+        renderQuestions(data);
+
+    } catch (err) {
+
+        questionsDiv.innerHTML =
+            `<div class="card">${escapeHtml(err.message)}</div>`;
+    }
 }
 
+//////////////////////////////////////////////////////
+// QUESTIONS
+//////////////////////////////////////////////////////
 function renderQuestions(data) {
 
     if (!data.questions) {
@@ -172,7 +213,7 @@ function renderQuestions(data) {
 }
 
 //////////////////////////////////////////////////////
-// SAFE HTML
+// HTML SAFE
 //////////////////////////////////////////////////////
 function escapeHtml(text) {
     return String(text)

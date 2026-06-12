@@ -11,6 +11,9 @@ let currentText = "";
 searchBtn.addEventListener("click", searchArticle);
 aiBtn.addEventListener("click", generateAIQuestions);
 
+//////////////////////////////////////////////////////
+// MAIN ROUTER
+//////////////////////////////////////////////////////
 async function searchArticle() {
 
     const topic = topicInput.value.trim();
@@ -22,7 +25,6 @@ async function searchArticle() {
 
     aiBtn.disabled = true;
     questionsDiv.innerHTML = "";
-
     resultDiv.innerHTML = `<div class="card">Loading...</div>`;
 
     try {
@@ -44,22 +46,50 @@ async function searchArticle() {
     }
 }
 
-//////////////////////////////
-// WIKIPEDIA
-//////////////////////////////
+//////////////////////////////////////////////////////
+// WIKIPEDIA (STRICT ENGLISH + RELEVANCE FILTER)
+//////////////////////////////////////////////////////
 async function searchWikipedia(topic) {
 
     const searchRes = await fetch(
-        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*`
+        `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*&srlimit=20`
     );
 
     const searchData = await searchRes.json();
 
-    if (!searchData.query.search.length) {
-        throw new Error("No Wikipedia article found.");
+    if (!searchData.query?.search?.length) {
+        throw new Error("No Wikipedia results found.");
     }
 
-    const title = searchData.query.search[0].title;
+    const queryWords = topic.toLowerCase().split(/\s+/);
+
+    // Score results for relevance
+    const scored = searchData.query.search.map(item => {
+
+        const title = item.title.toLowerCase();
+        const snippet = item.snippet.toLowerCase();
+
+        let score = 0;
+
+        for (const word of queryWords) {
+            if (title.includes(word)) score += 50;
+            if (snippet.includes(word)) score += 20;
+        }
+
+        return { item, score };
+    });
+
+    // Sort best match first
+    scored.sort((a, b) => b.score - a.score);
+
+    const best = scored[0];
+
+    // 🔥 HARD FILTER: must be somewhat relevant
+    if (best.score < 30) {
+        throw new Error("No closely related Wikipedia article found. Try a more specific topic.");
+    }
+
+    const title = best.item.title;
 
     const pageRes = await fetch(
         `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${encodeURIComponent(title)}&format=json&origin=*`
@@ -68,7 +98,12 @@ async function searchWikipedia(topic) {
     const pageData = await pageRes.json();
     const page = Object.values(pageData.query.pages)[0];
 
-    const text = page.extract || "";
+    let text = page.extract || "";
+
+    // English enforcement heuristic
+    if (!isEnglishText(text)) {
+        throw new Error("Non-English or low-quality article detected. Try again.");
+    }
 
     currentText = text;
 
@@ -79,7 +114,7 @@ async function searchWikipedia(topic) {
             <div class="title">${escapeHtml(title)}</div>
 
             <div class="meta">
-                Source: Wikipedia
+                Source: Wikipedia (English)
             </div>
 
             <div class="abstract">
@@ -89,9 +124,9 @@ async function searchWikipedia(topic) {
     `;
 }
 
-//////////////////////////////
-// GUTENBERG (LITERATURE)
-//////////////////////////////
+//////////////////////////////////////////////////////
+// GUTENBERG (ENGLISH FILTER + CLEANING)
+//////////////////////////////////////////////////////
 async function searchGutenberg(topic) {
 
     const res = await fetch(
@@ -100,23 +135,54 @@ async function searchGutenberg(topic) {
 
     const data = await res.json();
 
-    if (!data.results.length) {
+    if (!data.results?.length) {
         throw new Error("No books found.");
     }
 
-    const book = data.results[Math.floor(Math.random() * data.results.length)];
+    const queryWords = topic.toLowerCase().split(/\s+/);
+
+    // pick best matching book instead of random
+    const scored = data.results.map(book => {
+
+        const title = (book.title || "").toLowerCase();
+        const author = (book.authors?.[0]?.name || "").toLowerCase();
+
+        let score = 0;
+
+        for (const word of queryWords) {
+            if (title.includes(word)) score += 50;
+            if (author.includes(word)) score += 20;
+        }
+
+        return { book, score };
+    });
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const best = scored[0];
+
+    if (best.score < 20) {
+        throw new Error("No closely relevant book found.");
+    }
+
+    const book = best.book;
 
     const textUrl =
         book.formats["text/plain; charset=utf-8"] ||
         book.formats["text/plain"];
 
     if (!textUrl) {
-        throw new Error("No readable text found.");
+        throw new Error("No readable text available.");
     }
 
     let text = await fetch(textUrl).then(r => r.text());
 
     text = cleanGutenberg(text);
+
+    // English enforcement
+    if (!isEnglishText(text)) {
+        throw new Error("Non-English or corrupted text detected.");
+    }
 
     currentText = text;
 
@@ -138,6 +204,9 @@ async function searchGutenberg(topic) {
     `;
 }
 
+//////////////////////////////////////////////////////
+// TEXT CLEANERS
+//////////////////////////////////////////////////////
 function cleanGutenberg(text) {
 
     text = text.replace(/\r/g, "");
@@ -151,13 +220,38 @@ function cleanGutenberg(text) {
     return text.trim().slice(0, 12000);
 }
 
-//////////////////////////////
+//////////////////////////////////////////////////////
+// ENGLISH DETECTION (IMPORTANT UPGRADE)
+//////////////////////////////////////////////////////
+function isEnglishText(text) {
+
+    const commonEnglish = [
+        "the","and","of","to","in","a","that","is",
+        "was","for","on","with","as","by","at","from",
+        "this","it","be","are","or","an"
+    ];
+
+    const lower = text.toLowerCase();
+
+    let hits = 0;
+
+    for (const word of commonEnglish) {
+        if (lower.includes(` ${word} `)) {
+            hits++;
+        }
+    }
+
+    // must match enough English structure words
+    return hits >= 5;
+}
+
+//////////////////////////////////////////////////////
 // AI QUESTIONS (UNCHANGED)
-//////////////////////////////
+//////////////////////////////////////////////////////
 async function generateAIQuestions() {
 
     questionsDiv.innerHTML =
-        `<div class="card">Generating AI questions...</div>`;
+        `<div class="card">Generating SAT questions...</div>`;
 
     try {
 
@@ -176,7 +270,6 @@ async function generateAIQuestions() {
         renderQuestions(data);
 
     } catch (err) {
-
         questionsDiv.innerHTML = `
             <div class="card">
                 <pre>${escapeHtml(err.message)}</pre>
@@ -185,9 +278,9 @@ async function generateAIQuestions() {
     }
 }
 
-//////////////////////////////
+//////////////////////////////////////////////////////
 // QUESTIONS (UNCHANGED)
-//////////////////////////////
+//////////////////////////////////////////////////////
 function renderQuestions(data) {
 
     if (!data.questions) {
@@ -230,9 +323,9 @@ function renderQuestions(data) {
     });
 }
 
-//////////////////////////////
-// UTIL
-//////////////////////////////
+//////////////////////////////////////////////////////
+// UTILS
+//////////////////////////////////////////////////////
 function shuffle(arr) {
     return arr.sort(() => Math.random() - 0.5);
 }

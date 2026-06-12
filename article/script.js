@@ -27,7 +27,7 @@ async function searchArticle() {
     resultDiv.innerHTML = `<div class="card">Loading Wikipedia passage...</div>`;
 
     try {
-        await fetchWikipediaPassage(topic);
+        await fetchWikipediaExcerpt(topic);
     } catch (err) {
         console.error(err);
         resultDiv.innerHTML = `
@@ -42,9 +42,9 @@ async function searchArticle() {
 //////////////////////////////////////////////////////
 // WIKIPEDIA → REAL 2–3 PARAGRAPH PASSAGE
 //////////////////////////////////////////////////////
-async function fetchWikipediaPassage(topic) {
+async function fetchWikipediaExcerpt(topic) {
 
-    // 1. search article
+    // 1. search page
     const searchRes = await fetch(
         `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*&srlimit=1`
     );
@@ -57,7 +57,7 @@ async function fetchWikipediaPassage(topic) {
 
     const title = searchData.query.search[0].title;
 
-    // 2. get full article text
+    // 2. fetch full extract
     const pageRes = await fetch(
         `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&titles=${encodeURIComponent(title)}&format=json&origin=*`
     );
@@ -65,42 +65,33 @@ async function fetchWikipediaPassage(topic) {
     const pageData = await pageRes.json();
     const page = Object.values(pageData.query.pages)[0];
 
-    let text = clean(page.extract || "");
+    let text = page.extract;
 
-    if (!text || text.length < 2000) {
-        throw new Error("Article too short.");
+    if (!text) {
+        throw new Error("No article content found.");
     }
 
-    // 3. split into REAL paragraphs
+    // 3. split into paragraphs (THIS is the key)
     const paragraphs = text
-        .split("\n")
+        .split("\n\n")
         .map(p => p.trim())
-        .filter(p => p.length > 80); // remove junk lines
+        .filter(p => p.length > 80);
 
-    if (paragraphs.length < 3) {
-        throw new Error("Not enough usable paragraphs.");
+    if (paragraphs.length === 0) {
+        throw new Error("No usable excerpt found.");
     }
 
-    // 4. pick a 2–3 paragraph passage (contiguous)
-    const startIndex = Math.floor(Math.random() * (paragraphs.length - 3));
+    // 4. take first 2–3 paragraphs (simple + stable)
+    const excerpt = paragraphs.slice(0, 3).join("\n\n");
 
-    const passage = paragraphs
-        .slice(startIndex, startIndex + 3)
-        .join("\n\n");
-
-    // 5. final validation
-    if (!isOnTopic(passage, topic)) {
-        throw new Error("Passage not relevant enough. Try again.");
-    }
-
-    currentText = passage;
+    currentText = excerpt;
     aiBtn.disabled = false;
 
     resultDiv.innerHTML = `
         <div class="card">
             <div class="title">${escapeHtml(title)}</div>
-            <div class="meta">Source: Wikipedia (2–3 paragraph passage)</div>
-            <div class="abstract">${escapeHtml(passage)}</div>
+            <div class="meta">Source: Wikipedia excerpt</div>
+            <div class="abstract">${escapeHtml(excerpt)}</div>
         </div>
     `;
 }

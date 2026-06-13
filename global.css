@@ -30,3 +30,13 @@
   justify-content: center;
   font-size: 12px;
 }
+
+body.dark {
+  background: #0f0f12;
+  color: white;
+}
+
+body {
+  background: white;
+  color: black;
+}

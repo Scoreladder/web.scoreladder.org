@@ -46,17 +46,20 @@
 <div class="box">
   <h2>Settings</h2>
 
-  <input id="displayName" placeholder="Display Name" />
-
-  <button onclick="save()">Save</button>
-  <button onclick="back()">Back</button>
+  <textarea id="bio"></textarea>
+    <input id="banner" placeholder="Banner image URL">
+    <input id="twitter" placeholder="Twitter URL">
+    <input id="instagram" placeholder="Instagram URL">
+    <input id="youtube" placeholder="YouTube URL">
+    <input id="website" placeholder="Website URL">
+    
+    <button onclick="save()">Save</button>
+    <button onclick="back()">View Profile</button>
 </div>
 
 <script>
-const API = "https://auth.scoreladder.org";
-
 async function load() {
-  const res = await fetch(API + "/me", { credentials: "include" });
+  const res = await fetch("https://auth.scoreladder.org/me", { credentials: "include" });
 
   if (!res.ok) {
     location.href = "/";
@@ -81,7 +84,7 @@ async function save() {
 }
 
 function back() {
-  location.href = "/profile.html";
+  location.href = "/profile";
 }
 
 load();

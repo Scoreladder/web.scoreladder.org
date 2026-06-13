@@ -1,0 +1,99 @@
+<style>
+  #topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: #1a1a22;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+    z-index: 999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    font-family: Arial;
+  }
+
+  .tb-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-weight: bold;
+    color: white;
+    font-size: 16px;
+  }
+
+  .tb-logo {
+    background: #5865F2;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .tb-center {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .tb-center a {
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    opacity: 0.85;
+    transition: 0.15s;
+  }
+
+  .tb-center a:hover {
+    opacity: 1;
+  }
+
+  .tb-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn {
+    border: none;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .login {
+    background: #5865F2;
+    color: white;
+  }
+
+  .donate {
+    background: #ffaa00;
+    color: black;
+  }
+</style>
+
+<div id="topbar">
+  <!-- LEFT -->
+  <div class="tb-left">
+    <div class="tb-logo">SL</div>
+    <div>Scoreladder</div>
+  </div>
+
+  <!-- CENTER NAV -->
+  <div class="tb-center">
+    <a href="/">Home</a>
+    <a href="/play/">Play</a>
+    <a href="/leaderboards/">Leaderboards</a>
+    <a href="/rules/">Rules</a>
+    <a href="/about/">About Us</a>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="tb-right">
+    <button class="btn donate" onclick="location.href='/donate/'">Donate</button>
+    <button class="btn login" onclick="location.href='/login/'">Log in</button>
+  </div>
+</div>

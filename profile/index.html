@@ -2,37 +2,87 @@
 <html>
 <head>
   <title>Profile</title>
+
   <link rel="stylesheet" href="https://web.scoreladder.org/global.css">
+
   <style>
     body {
       margin: 0;
-      font-family: Arial;
-      background: #0f0f12;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #1a1a22, #0f0f12);
       color: white;
-      padding-top: 60px;
+      padding-top: 70px;
       padding-bottom: 50px;
+      display: flex;
+      justify-content: center;
     }
 
-    .box {
-      background: #1a1a22;
-      padding: 20px;
-      border-radius: 12px;
-      width: 320px;
+    .profile-card {
+      width: 360px;
+      background: rgba(26, 26, 34, 0.9);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+      text-align: center;
     }
 
-    img {
-      width: 80px;
-      height: 80px;
+    .avatar {
+      width: 96px;
+      height: 96px;
       border-radius: 50%;
+      border: 3px solid #5865F2;
+      margin-bottom: 12px;
+    }
+
+    .name {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .id {
+      font-size: 12px;
+      opacity: 0.6;
+      margin-bottom: 20px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 20px 0;
+    }
+
+    .stat {
+      background: rgba(255,255,255,0.05);
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 12px;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
     }
 
     button {
       width: 100%;
       padding: 10px;
-      margin-top: 10px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
+      font-weight: bold;
+      transition: 0.15s;
     }
 
     .settings {
@@ -40,28 +90,64 @@
       color: white;
     }
 
+    .settings:hover {
+      background: #555;
+    }
+
     .logout {
       background: #ff4d4d;
       color: white;
     }
+
+    .logout:hover {
+      background: #ff2f2f;
+    }
   </style>
 </head>
+
 <body>
 
-<div class="box">
-  <h2>Profile</h2>
+<div class="profile-card">
 
-  <img id="avatar" />
-  <h3 id="name"></h3>
-  <p id="id"></p>
+  <img id="avatar" class="avatar" />
 
-  <button class="settings" onclick="goSettings()">Settings</button>
-  <button class="logout" onclick="logout()">Logout</button>
+  <h2 id="name" class="name">Loading...</h2>
+  <p id="id" class="id"></p>
+
+  <div class="stats">
+    <div class="stat">
+      Level
+      <b>1</b>
+    </div>
+
+    <div class="stat">
+      Elo
+      <b>--</b>
+    </div>
+
+    <div class="stat">
+      Rank
+      <b>Unranked</b>
+    </div>
+
+    <div class="stat">
+      Status
+      <b>Online</b>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button class="settings" onclick="goSettings()">Settings</button>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
 </div>
 
 <script>
+const API = "https://auth.scoreladder.org";
+
 async function load() {
-  const res = await fetch("https://auth.scoreladder.org/me", { credentials: "include" });
+  const res = await fetch(API + "/me", { credentials: "include" });
 
   if (!res.ok) {
     location.href = "/";
@@ -92,9 +178,11 @@ async function logout() {
 
 load();
 </script>
-<script src="https://web.scoreladder.org/components/layout.js" defer></script>
+
+<script src="https://web.scoreladder.org/components/layout.js"></script>
 
 <div id="header"></div>
 <div id="footer"></div>
+
 </body>
 </html>

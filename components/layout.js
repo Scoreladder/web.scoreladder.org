@@ -1,4 +1,4 @@
-const API = "https://auth.scoreladder.org/"
+const API = "https://auth.scoreladder.org"
 
 /* ---------------- ENTRY POINT ---------------- */
 

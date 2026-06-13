@@ -12,16 +12,6 @@
 </head>
 
 <body>
-    <header>
-        <a href="https://web.scoreladder.org/"><img src="./images/Scoreladder Logo.png" alt="Logo" style="max-height:60px;"></a>
-        <a href="/login" class="link">Log in</a>
-        <a href="/play" class="link">Play</a>
-        <a href="/donate" class="link">Donate</a>
-        <a href="/leaderboards" class="link">Leaderboards</a>
-        <a href="/rules" class="link">Rules</a>
-        <a href="/aboutus" class="link">About Us</a>
-        <button id="darkmode-toggle" class="link">Darkmode Toggle</button>
-    </header>
     <div class="center">
         <div class="regular-text bold">
             <h1 id="title">Welcome to Scoreladder!</h1>
@@ -101,20 +91,9 @@
         render(pages, "pages");
         render(externalLinks, "links");
     </script>
-<script>
-async function loadComponent(id, file) {
-  const res = await fetch(file);
-  const html = await res.text();
-  document.getElementById(id).innerHTML = html;
-}
-</script>
+<script src="https://web.scoreladder.org/components/layout.js" defer></script>
 
 <div id="header"></div>
 <div id="footer"></div>
-
-<script>
-loadComponent("header", "/components/header.html");
-loadComponent("footer", "/components/footer.html");
-</script>
 </body>
 </html>

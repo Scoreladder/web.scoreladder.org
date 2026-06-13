@@ -60,10 +60,8 @@
 </div>
 
 <script>
-const API = "https://auth.scoreladder.org";
-
 async function load() {
-  const res = await fetch(API + "/me", { credentials: "include" });
+  const res = await fetch("https://auth.scoreladder.org/me", { credentials: "include" });
 
   if (!res.ok) {
     location.href = "/";

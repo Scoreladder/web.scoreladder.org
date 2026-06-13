@@ -1,11 +1,6 @@
 :root {
   --topbar-height: 60px;
 }
-
-body {
-  padding-top: var(--topbar-height);
-}
-
 #topbar {
   position: fixed;
   top: 0;
@@ -42,10 +37,12 @@ body {
 body.darmode {
   background: #0f0f12;
   color: white;
+  padding-top: var(--topbar-height);
 }
 
 body {
   background: white;
   color: black;
+  padding-top: var(--topbar-height);
 }
 

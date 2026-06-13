@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", initLayout);
 async function initLayout() {
   await load("header", "/components/header.html");
   await load("footer", "/components/footer.html");
+  syncTopbarHeight();
 
   initTopbar();
 }
@@ -99,4 +100,12 @@ function applyDarkMode(enabled) {
       ? "https://web.scoreladder.org/images%20and%20svgs/Scoreladder%20Logo%20Dark.png"
       : "https://web.scoreladder.org/images%20and%20svgs/Scoreladder%20Logo.png";
   }
+}
+
+function syncTopbarHeight() {
+  const topbar = document.getElementById("topbar");
+  if (!topbar) return;
+
+  const height = topbar.offsetHeight;
+  document.documentElement.style.setProperty("--topbar-height", height + "px");
 }

@@ -1,4 +1,5 @@
-const API = "https://auth.scoreladder.org";
+window.API = window.API || "https://auth.scoreladder.org";
+const API = window.API;
 
 /* ---------------- ENTRY POINT ---------------- */
 

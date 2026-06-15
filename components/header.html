@@ -1,0 +1,82 @@
+<style>
+#topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: #1a1a22;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  z-index: 999;
+  font-family: Arial;
+}
+
+#topbar .left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#topbar .logo {
+  height: 34px;
+  cursor: pointer;
+}
+
+#topbar .center a {
+  margin: 0 10px;
+  color: white;
+  text-decoration: none;
+  opacity: 0.85;
+}
+
+#topbar .right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#topbar button {
+  background: #444;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#topbar .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+</style>
+
+<div id="topbar">
+  <div class="left">
+    <img id="logo" class="logo" src="" onclick="location.href='/'">
+  </div>
+
+  <div class="center">
+    <a href="/play/">Play</a>
+    <a href="/leaderboards/">Leaderboards</a>
+    <a href="/rules/">Rules</a>
+    <a href="/aboutus/">About</a>
+    <a href="/privacy/">Privacy Policy</a>
+  </div>
+
+  <div class="right">
+    <button id="darkmode-toggle">🌙</button>
+
+    <img id="profileBtn"
+         class="avatar hidden"
+         onclick="location.href='/profile/'">
+
+    <button id="loginBtn" onclick="location.href='/login/'">
+      Log in
+    </button>
+  </div>
+</div>

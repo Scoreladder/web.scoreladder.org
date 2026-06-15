@@ -3,64 +3,63 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>Scoreladder Articles</title>
 
+<link rel="stylesheet" href="https://web.scoreladder.org/global.css">
 <style>
-    
 :root {
     --base-color: #e4e4e4;
-    --primary-color: #b8b8b8;
     --secondary-color: #a9a9a9;
     --text-color: #222222;
 }
+
 .darkmode {
     --base-color: #303030;
-    --primary-color: #3b3b3b;
     --secondary-color: #5a5a5a;
     --text-color: #e4e4e4;
 }
+
 body {
-    background-color: var(--base-color);
+    margin: 0;
     font-family: sans-serif;
+    background: var(--base-color);
+    color: var(--text-color);
 }
 
 .container {
     max-width: 900px;
     margin: auto;
+    padding: 20px;
 }
 
 h1 {
-    margin-bottom: 6px;
-}
-
-.regular-text {
-    color: var(--text-color);
+    margin-bottom: 5px;
 }
 
 .subtitle {
-    color: var(--text-color);
     margin-bottom: 20px;
+    opacity: 0.8;
 }
 
+/* INPUT */
 input {
     width: 100%;
     padding: 14px;
     font-size: 18px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: none;
     margin-bottom: 12px;
-    box-sizing: border-box;
 }
 
+/* BUTTONS */
 button {
     padding: 12px 18px;
     font-size: 16px;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     cursor: pointer;
     background: #4f46e5;
-    color: var(--base-color);
+    color: white;
     margin-right: 8px;
 }
 
@@ -73,39 +72,36 @@ button:disabled {
     cursor: not-allowed;
 }
 
+/* CARD */
 .card {
-    margin-top: 25px;
+    margin-top: 20px;
     padding: 20px;
     background: var(--secondary-color);
     border-radius: 12px;
 }
 
 .title {
-    font-size: 26px;
+    font-size: 24px;
     margin-bottom: 10px;
 }
 
 .meta {
-    color: var(--text-color);
-    margin-bottom: 15px;
-    line-height: 1.6;
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 10px;
 }
 
 .abstract {
-    line-height: 1.7;
+    line-height: 1.6;
+    white-space: pre-wrap;
 }
 
-.abstract img {
-    max-width: 100%;
-    border-radius: 8px;
-    margin: 10px 0;
-}
-
+/* QUESTIONS */
 .choice {
     margin-top: 8px;
     padding: 10px;
-    background: var(--secondary-color);
     border-radius: 8px;
+    background: rgba(0,0,0,0.1);
 }
 
 .answer {
@@ -113,10 +109,11 @@ button:disabled {
     color: #8ab4ff;
 }
 
+/* FOOTER */
 .footer {
-    margin-top: 40px;
-    font-size: 13px;
-    color: var(--text-color);
+    margin-top: 30px;
+    font-size: 12px;
+    opacity: 0.7;
     text-align: center;
 }
 </style>
@@ -126,29 +123,32 @@ button:disabled {
 
 <div class="container">
 
-<h1 class="regular-text">Scoreladder Articles</h1>
+<h1>Scoreladder Articles</h1>
 
 <div class="subtitle">
-    Open-access research powered by DOAJ
+    Wikipedia-powered reading + SAT question generator
 </div>
 
-<input id="topicInput" placeholder="Enter a topic..." />
+<input id="topicInput" placeholder="Enter a topic (e.g. World War II, Gravity, Shakespeare)" />
 
 <div>
-    <button id="searchBtn" class="regular-text">Find Article</button>
-    <button id="aiBtn" class="regular-text" disabled>Generate SAT Questions</button>
+    <button id="searchBtn">Find Article</button>
+    <button id="aiBtn" disabled>Generate SAT Questions</button>
 </div>
 
-<div id="result" class="regular-text"></div>
-<div id="questions" class="regular-text"></div>
+<div id="result"></div>
+<div id="questions"></div>
 
 <div class="footer">
-    Articles sourced from DOAJ (Directory of Open Access Journals)
+    Powered by Wikipedia API
 </div>
 
 </div>
 
 <script src="script.js"></script>
+<script src="https://web.scoreladder.org/components/layout.js" defer></script>
 
+<div id="header"></div>
+<div id="footer"></div>
 </body>
 </html>

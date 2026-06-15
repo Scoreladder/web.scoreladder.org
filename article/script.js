@@ -7,111 +7,139 @@ const questionsDiv = document.getElementById("questions");
 
 let currentText = "";
 
+/* ---------------------------
+   EVENTS
+---------------------------- */
 searchBtn.addEventListener("click", searchArticle);
 aiBtn.addEventListener("click", generateAIQuestions);
 
+/* ---------------------------
+   SEARCH WIKIPEDIA
+---------------------------- */
 async function searchArticle() {
 
     const topic = topicInput.value.trim();
+
+    resultDiv.innerHTML = `<div class="card">Loading Wikipedia...</div>`;
+    questionsDiv.innerHTML = "";
+    currentText = "";
+    aiBtn.disabled = true;
 
     if (!topic) {
         resultDiv.innerHTML = `<div class="card">Enter a topic.</div>`;
         return;
     }
 
-    aiBtn.disabled = true;
-    questionsDiv.innerHTML = "";
-
-    resultDiv.innerHTML = `<div class="card">Loading...</div>`;
-
     try {
 
-        const res = await fetch(
-            `https://doaj.org/api/search/articles/${encodeURIComponent(topic)}?pageSize=50`
+        // 1. SEARCH TITLE
+        const searchRes = await fetch(
+            `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&format=json&origin=*&srlimit=1`
         );
 
-        const data = await res.json();
+        const searchData = await searchRes.json();
 
-        if (!data.results?.length) {
-            resultDiv.innerHTML = `<div class="card">No results found.</div>`;
-            return;
+        if (!searchData.query?.search?.length) {
+            throw new Error("No Wikipedia page found.");
         }
 
-        const article =
-            data.results[Math.floor(Math.random() * data.results.length)];
+        const title = searchData.query.search[0].title;
 
-        renderArticle(article);
+        // 2. GET HTML EXTRACT
+        const htmlRes = await fetch(
+            `https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(title)}&prop=text&format=json&origin=*`
+        );
+
+        const htmlData = await htmlRes.json();
+
+        const htmlString = htmlData.parse?.text?.["*"];
+
+        if (!htmlString) {
+            throw new Error("No Wikipedia content returned.");
+        }
+
+        // 3. PARSE HTML
+        const doc = new DOMParser().parseFromString(htmlString, "text/html");
+
+        let paragraphs = Array.from(doc.querySelectorAll("p"))
+            .map(p => p.textContent.trim())
+            .filter(p =>
+                p.length > 40 &&
+                !p.toLowerCase().includes("coordinates") &&
+                !p.toLowerCase().includes("listen") &&
+                !p.toLowerCase().includes("pronunciation")
+            );
+
+        if (paragraphs.length < 2) {
+            throw new Error("Not enough Wikipedia paragraphs found.");
+        }
+
+        // 4. PICK 2 RANDOM PARAGRAPHS
+        paragraphs = paragraphs.sort(() => Math.random() - 0.5);
+        const selected = paragraphs.slice(0, 2).join("\n\n");
+
+        currentText = selected;
+        aiBtn.disabled = false;
+
+        // 5. BUILD LINK
+        const link =
+            `https://en.wikipedia.org/wiki/${title.replace(/ /g, "_")}`;
+
+        // 6. RENDER
+        resultDiv.innerHTML = `
+            <div class="card">
+                <div class="title">${escapeHtml(title)}</div>
+                <div class="meta">Source: Wikipedia</div>
+
+                <div class="abstract">${escapeHtml(selected)}</div>
+
+                <br>
+                <a href="${link}" target="_blank">View Article</a>
+            </div>
+        `;
 
     } catch (err) {
         console.error(err);
-        resultDiv.innerHTML = `<div class="card">Failed to load articles.</div>`;
+
+        resultDiv.innerHTML = `
+            <div class="card">
+                Error: ${escapeHtml(err.message)}
+            </div>
+        `;
     }
 }
 
-function renderArticle(article) {
-
-    const bib = article.bibjson || {};
-
-    const title = bib.title || "No title";
-    const abstract = bib.abstract || bib.title || "No abstract available";
-
-    currentText = abstract;
-
-    aiBtn.disabled = currentText.length < 50;
-
-    const authors =
-        (bib.author || []).map(a => a.name).join(", ") || "Unknown";
-
-    const journal = bib.journal?.title || "Unknown journal";
-    const year = bib.year || "Unknown year";
-
-    const link = bib.link?.[0]?.url || "#";
-
-    resultDiv.innerHTML = `
-        <div class="card">
-
-            <div class="title">${escapeHtml(title)}</div>
-
-            <div class="meta">
-                <b>Authors:</b> ${escapeHtml(authors)}<br>
-                <b>Journal:</b> ${escapeHtml(journal)}<br>
-                <b>Year:</b> ${escapeHtml(year)}
-            </div>
-
-            <div class="abstract">
-                ${sanitizeHTML(abstract)}
-            </div>
-
-            <br>
-            <a href="${link}" target="_blank">View Article</a>
-
-        </div>
-    `;
-}
-
+/* ---------------------------
+   AI QUESTION GENERATION
+---------------------------- */
 async function generateAIQuestions() {
 
+    if (!currentText) {
+        questionsDiv.innerHTML = `
+            <div class="card">Load an article first.</div>
+        `;
+        return;
+    }
+
     questionsDiv.innerHTML =
-        `<div class="card">Generating AI questions...</div>`;
+        `<div class="card">Generating SAT questions...</div>`;
+
+    aiBtn.disabled = true;
 
     try {
 
-        const res = await fetch(
-            "https://ai.scoreladder.org",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    text: currentText
-                })
-            }
-        );
+        const res = await fetch("https://ai.scoreladder.org", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                text: currentText
+            })
+        });
 
         if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(errText);
+            throw new Error(await res.text());
         }
 
         const data = await res.json();
@@ -119,62 +147,27 @@ async function generateAIQuestions() {
         renderQuestions(data);
 
     } catch (err) {
-
         console.error(err);
 
         questionsDiv.innerHTML = `
             <div class="card">
-                <h3>Error</h3>
-                <pre style="white-space: pre-wrap; color: #ff6b6b;">
-${escapeHtml(err.message)}
-                </pre>
+                Error generating questions:<br><br>
+                ${escapeHtml(err.message)}
             </div>
         `;
+    } finally {
+        aiBtn.disabled = false;
     }
 }
 
-class ShuffleNoRepeat {
-  constructor() {
-    this.last = null;
-  }
-
-  shuffle(arr) {
-    let result;
-
-    do {
-      result = this._fisherYates(arr.slice());
-    } while (this.last && this._sameArray(result, this.last));
-
-    this.last = result.slice();
-    return result;
-  }
-
-  _fisherYates(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-  }
-
-  _sameArray(a, b) {
-    return a.length === b.length && a.every((v, i) => v === b[i]);
-  }
-}
-
-const shuffler = new ShuffleNoRepeat();
-
-
-function shuffle(arr) {
-    return shuffler.shuffle(arr);
-}
-
-
+/* ---------------------------
+   RENDER QUESTIONS
+---------------------------- */
 function renderQuestions(data) {
 
     if (!data.questions) {
         questionsDiv.innerHTML =
-            `<div class="card">Invalid AI response.</div>`;
+            `<div class="card">Invalid AI response</div>`;
         return;
     }
 
@@ -182,25 +175,15 @@ function renderQuestions(data) {
 
     data.questions.forEach((q, i) => {
 
-        // 1. Attach original index to each choice
-        const choicesWithIndex = q.choices.map((choice, idx) => ({
-            text: choice,
-            idx: idx
-        }));
+        const shuffled = q.choices
+            .map((c, idx) => ({ text: c, idx }))
+            .sort(() => Math.random() - 0.5);
 
-        // 2. Shuffle them
-        const shuffled = shuffle(choicesWithIndex);
-
-        // 3. Find where correct answer moved
-        const correctIndex = shuffled.findIndex(
-            c => c.idx === q.answer
-        );
+        const correct = shuffled.findIndex(c => c.idx === q.answer);
 
         questionsDiv.innerHTML += `
             <div class="card">
-
                 <h3>Question ${i + 1}</h3>
-
                 <p>${escapeHtml(q.question)}</p>
 
                 ${shuffled.map((c, idx) => `
@@ -211,31 +194,16 @@ function renderQuestions(data) {
                 `).join("")}
 
                 <div class="answer">
-                    Answer: ${["A","B","C","D"][correctIndex]}
+                    Answer: ${["A","B","C","D"][correct]}
                 </div>
-
             </div>
         `;
     });
 }
 
 /* ---------------------------
-   SAFE HTML HANDLING
+   SAFE HTML
 ---------------------------- */
-
-function sanitizeHTML(html) {
-
-    if (!html) return "";
-
-    const doc = new DOMParser().parseFromString(html, "text/html");
-
-    // remove dangerous tags
-    doc.querySelectorAll("script, iframe, object, embed")
-        .forEach(el => el.remove());
-
-    return doc.body.innerHTML;
-}
-
 function escapeHtml(text) {
     return String(text)
         .replaceAll("&", "&amp;")

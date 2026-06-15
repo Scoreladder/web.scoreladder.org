@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://web.scoreladder.org/global.css">
+  <title>Settings</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f0f12;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .box {
+      background: #1a1a22;
+      padding: 20px;
+      border-radius: 12px;
+      width: 320px;
+    }
+
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: #5865F2;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<div class="box">
+  <h2>Settings</h2>
+
+  <textarea id="displayName" placeholder="Display Name"></textarea>
+
+  <textarea id="bio" placeholder="Bio"></textarea>
+  <input id="banner" placeholder="Banner image URL">
+  <input id="twitter" placeholder="Twitter URL">
+  <input id="instagram" placeholder="Instagram URL">
+  <input id="youtube" placeholder="YouTube URL">
+  <input id="website" placeholder="Website URL">
+  
+  <button onclick="save()">Save</button>
+  <button onclick="back()">View Profile</button>
+</div>
+
+<script>
+async function load() {
+  const res = await fetch("https://auth.scoreladder.org/me", { credentials: "include" });
+
+  if (!res.ok) {
+    location.href = "/";
+    return;
+  }
+
+  const user = await res.json();
+  document.getElementById("displayName").value = user.display_name || "";
+}
+
+async function save() {
+  await fetch("https://auth.scoreladder.org/settings", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      bio: bio.value,
+      banner: banner.value,
+      twitter: twitter.value,
+      instagram: instagram.value,
+      youtube: youtube.value,
+      website: website.value
+    })
+  });
+}
+
+function back() {
+  location.href = "/profile";
+}
+
+load();
+</script>
+<script src="https://web.scoreladder.org/components/layout.js" defer></script>
+
+<div id="header"></div>
+<div id="footer"></div>
+</body>
+</html>

@@ -1,11 +1,23 @@
 <style>
+:root {
+    --base-color: #e4e4e4;
+    --primary-color: #b8b8b8;
+    --secondary-color: #a9a9a9;
+    --text-color: #222222;
+}
+.darkmode {
+    --base-color: #303030;
+    --primary-color: #3b3b3b;
+    --secondary-color: #5a5a5a;
+    --text-color: #e4e4e4;
+}
 #topbar {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   height: 60px;
-  background: #1a1a22;
+  background: var(--primary-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -27,7 +39,7 @@
 
 #topbar .center a {
   margin: 0 10px;
-  color: white;
+  color: var(--text-color);
   text-decoration: none;
   opacity: 0.85;
 }
@@ -39,8 +51,8 @@
 }
 
 #topbar button {
-  background: #444;
-  color: white;
+  background: var(--secondary-color);
+  color: var(--text-color);
   border: none;
   padding: 6px 10px;
   border-radius: 8px;

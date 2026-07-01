@@ -56,3 +56,6 @@ body {
   padding-top: var(--topbar-height);
 }
 
+.hidden {
+  display: none;
+}
